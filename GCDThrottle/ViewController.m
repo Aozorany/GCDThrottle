@@ -9,18 +9,19 @@
 #import "ViewController.h"
 #import "GCDThrottle.h"
 
-@implementation ViewController
+@implementation ViewController {
+    dispatch_queue_t _queue;
+}
 
 - (IBAction)textFieldValueChanged:(UITextField *)sender {
     
-    dispatch_throttle(1, ^{
+//    dispatch_throttle(1, ^{
+//        NSLog(@"search: %@", sender.text);
+//    });2
+    _queue = dispatch_queue_create("ThrottleQueue", DISPATCH_QUEUE_CONCURRENT);
+    dispatch_throttle_by_type_on_queue(1, GCDThrottleTypeInvokeAndIgnore, _queue, ^{
         NSLog(@"search: %@", sender.text);
     });
-    /*
-    dispatch_throttle_by_type(1, GCDThrottleTypeInvokeAndIgnore, ^{
-        NSLog(@"search: %@", sender.text);
-    });
-     */
 }
 
 @end

@@ -59,6 +59,15 @@ void dispatch_throttle_by_type_on_queue(NSTimeInterval threshold, GCDThrottleTyp
     return _sources;
 }
 
++ (NSMutableDictionary *)ignoredBlocks {
+    static NSMutableDictionary *_ignoredBlocks = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _ignoredBlocks = [NSMutableDictionary dictionary];
+    });
+    return _ignoredBlocks;
+}
+
 + (void)_throttle:(NSTimeInterval)threshold type:(GCDThrottleType)type queue:(dispatch_queue_t)queue key:(NSString *)key block:(GCDThrottleBlock)block {
     if (type == GCDThrottleTypeDelayAndInvoke) {
         NSMutableDictionary *scheduledSources = self.scheduledSources;
@@ -81,16 +90,25 @@ void dispatch_throttle_by_type_on_queue(NSTimeInterval threshold, GCDThrottleTyp
         scheduledSources[key] = source;
     } else if (type == GCDThrottleTypeInvokeAndIgnore) {
         NSMutableDictionary *scheduledSources = self.scheduledSources;
+        NSMutableDictionary *ignoredBlocks = self.ignoredBlocks;
+        
+        ignoredBlocks[key] = [block copy];
         
         dispatch_source_t source = scheduledSources[key];
         if (source) { return; }
         
-        block();
         source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
-        dispatch_source_set_timer(source, dispatch_time(DISPATCH_TIME_NOW, threshold * NSEC_PER_SEC), DISPATCH_TIME_FOREVER, 0);
+        dispatch_source_set_timer(source, dispatch_time(DISPATCH_TIME_NOW, 0), threshold * NSEC_PER_SEC, 0);
         dispatch_source_set_event_handler(source, ^{
-            dispatch_source_cancel(source);
-            [scheduledSources removeObjectForKey:key];
+            GCDThrottleBlock lastIgnoredBlock = ignoredBlocks[key];
+            if (lastIgnoredBlock) {
+                lastIgnoredBlock();
+                [ignoredBlocks removeObjectForKey:key];
+            } else {
+                dispatch_source_cancel(source);
+                
+                [scheduledSources removeObjectForKey:key];
+            }
         });
         dispatch_resume(source);
         

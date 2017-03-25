@@ -17,7 +17,7 @@ typedef void (^GCDThrottleBlock) ();
 /** Throttle type */
 typedef NS_ENUM(NSInteger, GCDThrottleType) {
     GCDThrottleTypeDelayAndInvoke,/**< Throttle will wait for [threshold] seconds to invoke the block, when new block comes, it cancels the previous block and restart waiting for [threshold] seconds to invoke the new one. */
-    GCDThrottleTypeInvokeAndIgnore,/**< Throttle invokes the block at once and then wait for [threshold] seconds before it can invoke another new block, all block invocations during waiting time will be ignored. */
+    GCDThrottleTypeInvokeAndIgnore,/**< Throttle invokes the block at once and then wait for [threshold] seconds before it can invoke another new block, all block invocations during waiting time will be ignored. When [threshold] seconds passed by, it invokes the last ignored block (if have). */
 };
 
 
