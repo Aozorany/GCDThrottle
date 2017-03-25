@@ -14,14 +14,35 @@
 }
 
 - (IBAction)textFieldValueChanged:(UITextField *)sender {
-    
-//    dispatch_throttle(1, ^{
-//        NSLog(@"search: %@", sender.text);
-//    });2
-    _queue = dispatch_queue_create("ThrottleQueue", DISPATCH_QUEUE_CONCURRENT);
-    dispatch_throttle_by_type_on_queue(1, GCDThrottleTypeInvokeAndIgnore, _queue, ^{
-        NSLog(@"search: %@", sender.text);
+    //A: threshold 1, DelayAndInvokeMode, block invoke in main queue
+    dispatch_throttle(1, ^{
+        NSLog(@"A: search: %@", sender.text);
     });
+    
+    //B: threshold 1, DelayAndInvokeMode, block invoke in default queue
+    dispatch_throttle_on_queue(1, THROTTLE_GLOBAL_QUEUE, ^{
+        NSLog(@"B: search: %@", sender.text);
+    });
+    
+    //C: threshold 1, InvokeAndIgnoreMode, block invoke in default queue
+    dispatch_throttle_by_type(1, GCDThrottleTypeInvokeAndIgnore, ^{
+        NSLog(@"C: search: %@", sender.text);
+    });
+    
+    //same as A
+    [GCDThrottle throttle:1 block:^{
+        NSLog(@"A2: search: %@", sender.text);
+    }];
+    
+    //same as B
+    [GCDThrottle throttle:1 queue:THROTTLE_GLOBAL_QUEUE block:^{
+        NSLog(@"B2: search: %@", sender.text);
+    }];
+    
+    //same as C
+    [GCDThrottle throttle:1 type:GCDThrottleTypeInvokeAndIgnore block:^{
+        NSLog(@"C2: search: %@", sender.text);
+    }];
 }
 
 @end

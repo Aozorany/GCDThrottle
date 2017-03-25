@@ -59,6 +59,15 @@ void dispatch_throttle_by_type_on_queue(NSTimeInterval threshold, GCDThrottleTyp
     return _sources;
 }
 
++ (NSMutableDictionary *)scheduledSources2 {
+    static NSMutableDictionary *_sources2 = nil;
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+        _sources2 = [NSMutableDictionary dictionary];
+    });
+    return _sources2;
+}
+
 + (NSMutableDictionary *)ignoredBlocks {
     static NSMutableDictionary *_ignoredBlocks = nil;
     static dispatch_once_t onceToken;
@@ -89,7 +98,7 @@ void dispatch_throttle_by_type_on_queue(NSTimeInterval threshold, GCDThrottleTyp
         
         scheduledSources[key] = source;
     } else if (type == GCDThrottleTypeInvokeAndIgnore) {
-        NSMutableDictionary *scheduledSources = self.scheduledSources;
+        NSMutableDictionary *scheduledSources = self.scheduledSources2;
         NSMutableDictionary *ignoredBlocks = self.ignoredBlocks;
         
         ignoredBlocks[key] = [block copy];
