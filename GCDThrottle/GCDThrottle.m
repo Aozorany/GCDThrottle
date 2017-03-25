@@ -50,7 +50,7 @@ void dispatch_throttle_by_type_on_queue(NSTimeInterval threshold, GCDThrottleTyp
 }
 
 #pragma mark private: general
-+ (NSMutableDictionary *)scheduledSources {
++ (NSMutableDictionary *)scheduledSourcesForMode0 {
     static NSMutableDictionary *_sources = nil;
     static dispatch_once_t token;
     dispatch_once(&token, ^{
@@ -59,27 +59,27 @@ void dispatch_throttle_by_type_on_queue(NSTimeInterval threshold, GCDThrottleTyp
     return _sources;
 }
 
-+ (NSMutableDictionary *)scheduledSources2 {
-    static NSMutableDictionary *_sources2 = nil;
++ (NSMutableDictionary *)scheduledSourcesForMode1 {
+    static NSMutableDictionary *_sources1 = nil;
     static dispatch_once_t token;
     dispatch_once(&token, ^{
-        _sources2 = [NSMutableDictionary dictionary];
+        _sources1 = [NSMutableDictionary dictionary];
     });
-    return _sources2;
+    return _sources1;
 }
 
-+ (NSMutableDictionary *)ignoredBlocks {
-    static NSMutableDictionary *_ignoredBlocks = nil;
++ (NSMutableDictionary *)blocksToInvoke {
+    static NSMutableDictionary *_blocksToInvoke = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _ignoredBlocks = [NSMutableDictionary dictionary];
+        _blocksToInvoke = [NSMutableDictionary dictionary];
     });
-    return _ignoredBlocks;
+    return _blocksToInvoke;
 }
 
 + (void)_throttle:(NSTimeInterval)threshold type:(GCDThrottleType)type queue:(dispatch_queue_t)queue key:(NSString *)key block:(GCDThrottleBlock)block {
     if (type == GCDThrottleTypeDelayAndInvoke) {
-        NSMutableDictionary *scheduledSources = self.scheduledSources;
+        NSMutableDictionary *scheduledSources = self.scheduledSourcesForMode0;
         
         dispatch_source_t source = scheduledSources[key];
         
@@ -98,10 +98,10 @@ void dispatch_throttle_by_type_on_queue(NSTimeInterval threshold, GCDThrottleTyp
         
         scheduledSources[key] = source;
     } else if (type == GCDThrottleTypeInvokeAndIgnore) {
-        NSMutableDictionary *scheduledSources = self.scheduledSources2;
-        NSMutableDictionary *ignoredBlocks = self.ignoredBlocks;
+        NSMutableDictionary *scheduledSources = self.scheduledSourcesForMode1;
+        NSMutableDictionary *blocksToInvoke = self.blocksToInvoke;
         
-        ignoredBlocks[key] = [block copy];
+        blocksToInvoke[key] = [block copy];
         
         dispatch_source_t source = scheduledSources[key];
         if (source) { return; }
@@ -109,10 +109,10 @@ void dispatch_throttle_by_type_on_queue(NSTimeInterval threshold, GCDThrottleTyp
         source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
         dispatch_source_set_timer(source, dispatch_time(DISPATCH_TIME_NOW, 0), threshold * NSEC_PER_SEC, 0);
         dispatch_source_set_event_handler(source, ^{
-            GCDThrottleBlock lastIgnoredBlock = ignoredBlocks[key];
-            if (lastIgnoredBlock) {
-                lastIgnoredBlock();
-                [ignoredBlocks removeObjectForKey:key];
+            GCDThrottleBlock blockToInvoke = blocksToInvoke[key];
+            if (blockToInvoke) {
+                blockToInvoke();
+                [blocksToInvoke removeObjectForKey:key];
             } else {
                 dispatch_source_cancel(source);
                 
