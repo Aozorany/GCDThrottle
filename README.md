@@ -4,7 +4,7 @@
 
 A lightweight GCD wrapper to throttling frequent method calling
 
-🇨🇳[中文介绍](https://github.com/cyanzhong/GCDThrottle/blob/master/README_CN.md)
+🇨🇳[中文介绍](https://github.com/Aozorany/GCDThrottle/blob/master/README_CN.md)
 
 # Purpose
 Throttling frequent method calling with a threshold time interval, for example text searching.
